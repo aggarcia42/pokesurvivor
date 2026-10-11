@@ -35,8 +35,8 @@ G.AchDefs = (() => {
     { id: 'time10', cat: 'supervivencia', tier: 2, name: 'Duro de pelar', desc: 'Aguanta 10 minutos.', value: s => Math.floor(st('bestTime')(s) / 60), goal: 10, reward: { t1: 4 } },
     { id: 'time15', cat: 'supervivencia', tier: 2, name: 'Resistente', desc: 'Aguanta 15 minutos.', value: s => Math.floor(st('bestTime')(s) / 60), goal: 15, reward: { t10: 1 } },
     { id: 'time20', cat: 'supervivencia', tier: 3, name: 'Superviviente', desc: 'Aguanta 20 minutos.', value: s => Math.floor(st('bestTime')(s) / 60), goal: 20, reward: { t10: 2 }, title: 'Superviviente' },
-    { id: 'lvl20', cat: 'supervivencia', tier: 1, name: 'Creciendo', desc: 'Llega al nivel 15 en una run.', value: st('bestLevel'), goal: 15, reward: { t1: 2 } },
-    { id: 'lvl40', cat: 'supervivencia', tier: 3, name: 'Imparable', desc: 'Llega al nivel 30 en una run.', value: st('bestLevel'), goal: 30, reward: { t10: 1 }, title: 'Imparable' },
+    { id: 'lvl20', cat: 'supervivencia', tier: 1, name: 'Creciendo', desc: 'Llega al nivel 38 en una run.', value: st('bestLevel'), goal: 38, reward: { t1: 2 } },
+    { id: 'lvl40', cat: 'supervivencia', tier: 3, name: 'Imparable', desc: 'Llega al nivel 75 en una run.', value: st('bestLevel'), goal: 75, reward: { t10: 1 }, title: 'Imparable' },
     { id: 'runs50', cat: 'supervivencia', tier: 2, name: 'Explorador', desc: 'Juega 50 runs.', value: st('runs'), goal: 50, reward: { t10: 1 }, title: 'Explorador' },
 
     // ---------- combate ----------
@@ -49,6 +49,8 @@ G.AchDefs = (() => {
     { id: 'evo1', cat: 'combate', tier: 1, name: 'Evolución', desc: 'Evoluciona un movimiento.', value: st('evolutions'), goal: 1, reward: { t1: 3 } },
     { id: 'evo25', cat: 'combate', tier: 2, name: 'Evolucionista', desc: 'Evoluciona 25 movimientos.', value: st('evolutions'), goal: 25, reward: { t10: 1 }, title: 'Evolucionista' },
     { id: 'evoAll', cat: 'combate', tier: 3, name: 'Maestro de movimientos', desc: 'Evoluciona los 47 movimientos distintos.', value: count('evoMoves'), goal: 47, reward: { t10: 3 }, title: 'Maestro de movimientos' },
+    { id: 'pevo1',  cat: 'combate', tier: 1, name: 'Crece contigo', desc: 'Tu compañero evoluciona en una run.', value: st('partnerEvos'), goal: 1,  reward: { t1: 3 } },
+    { id: 'pevo25', cat: 'combate', tier: 2, name: 'Entrenador',    desc: 'Tu compañero evoluciona 25 veces.',   value: st('partnerEvos'), goal: 25, reward: { t10: 1 }, title: 'Entrenador' },
     { id: 'fuse1',  cat: 'combate', tier: 1, name: 'Fusión',     desc: 'Fusiona dos movimientos con un vínculo.', value: st('fusions'), goal: 1,  reward: { t1: 3 } },
     { id: 'fuse10', cat: 'combate', tier: 2, name: 'Alquimista', desc: 'Haz 10 fusiones.',                         value: st('fusions'), goal: 10, reward: { t10: 1 }, title: 'Alquimista' },
     { id: 'items5', cat: 'combate', tier: 1, name: 'Bolsa llena', desc: 'Encuentra 5 objetos distintos.', value: count('itemsFound'), goal: 5, reward: { t1: 3 } },

@@ -6,6 +6,7 @@
  *   item      { id }        objeto equipado
  *   evolve    { move }      movimiento evolucionado
  *   fuse      { id }        fusión hecha con un vínculo
+ *   evolvePartner { from, to }  el compañero ha evolucionado en la run
  *   rift      { type }      pelea de grieta ganada
  *   runEnd    { time, level, coins, types, group }
  *   missionDone { daily }   (lo lanza claim)
@@ -147,6 +148,9 @@ G.Progress = (() => {
         break;
       case 'fuse':
         S.fusions = (S.fusions || 0) + 1;
+        break;
+      case 'evolvePartner':
+        S.partnerEvos = (S.partnerEvos || 0) + 1;
         break;
       case 'item':
         s.itemsFound = s.itemsFound || {}; s.itemsFound[d.id] = s.itemsFound[d.id] || Date.now();

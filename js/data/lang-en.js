@@ -137,7 +137,6 @@ G.I18n.add({
   '+8 vida': '+8 HP', '+4% daño': '+4% damage', '+3% velocidad': '+3% speed', '-3% recarga': '-3% cooldown', '+2% defensa': '+2% defense',
   '+0.2 vida/s': '+0.2 HP/s', '+12% recogida': '+12% pickup', '+8% Pokémonedas': '+8% PokéCoins', '+5% experiencia': '+5% experience',
   'Empiezas con 2 movimientos': 'Start with 2 moves', 'Máx.': 'Max.',
-  'Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.': 'Each Pokémon has its own upgrades: they only count when you play with it.',
   '(compañero)': '(partner)',
 
   // ---------------- interactivos y clima ----------------
@@ -316,7 +315,7 @@ G.I18n.add({
   'Cazashinies': 'Shiny hunter', 'Consigue 1 shiny.': 'Get 1 shiny.', 'Consigue 5 shinies.': 'Get 5 shinies.', 'Consigue 20 shinies.': 'Get 20 shinies.',
   'Calentando': 'Warming up', 'Superviviente': 'Survivor', 'Resistente': 'Tough', 'Duro de pelar': 'Hard to beat', 'Imparable': 'Unstoppable',
   'Aguanta 5 minutos.': 'Survive 5 minutes.', 'Aguanta 10 minutos.': 'Survive 10 minutes.', 'Aguanta 15 minutos.': 'Survive 15 minutes.', 'Aguanta 20 minutos.': 'Survive 20 minutes.',
-  'Creciendo': 'Growing up', 'Veterano': 'Veteran', 'Llega al nivel 20 en una run.': 'Reach level 20 in a run.', 'Llega al nivel 40 en una run.': 'Reach level 40 in a run.', 'Llega al nivel 15 en una run.': 'Reach level 15 in a run.', 'Llega al nivel 30 en una run.': 'Reach level 30 in a run.',
+  'Creciendo': 'Growing up', 'Veterano': 'Veteran', 'Llega al nivel 38 en una run.': 'Reach level 38 in a run.', 'Llega al nivel 75 en una run.': 'Reach level 75 in a run.', 'Llega al nivel 15 en una run.': 'Reach level 15 in a run.', 'Llega al nivel 30 en una run.': 'Reach level 30 in a run.',
   'Primeros combates': 'First battles', 'Valiente': 'Brave', 'Leyenda': 'Legend', 'Leyenda viva': 'Living legend',
   'Derrota a 1.000 Pokémon.': 'Defeat 1,000 Pokémon.', 'Derrota a 10.000 Pokémon.': 'Defeat 10,000 Pokémon.', 'Derrota a 100.000 Pokémon.': 'Defeat 100,000 Pokémon.',
   'Derrota a un jefe.': 'Defeat a boss.', 'Derrota a 25 jefes.': 'Defeat 25 bosses.', 'Derrota a 100 jefes.': 'Defeat 100 bosses.',
@@ -522,6 +521,11 @@ G.I18n.add({
   '+0.9 de vida regenerada por segundo por nivel.': '+0.9 HP regenerated per second per level.',
   '+30% de radio de recogida por nivel.': '+30% pickup radius per level.',
   '+12% de experiencia ganada por nivel.': '+12% experience gained per level.',
+  '¡{x} evolucionó en {x}!': '{x} evolved into {x}!', 'Crece contigo': 'Grows with you', 'Tu compañero evoluciona en una run.': 'Your partner evolves during a run.',
+  'Entrenador': 'Trainer', 'Tu compañero evoluciona 25 veces.': 'Your partner evolves 25 times.',
+  '+{x}% de experiencia por empezar pequeño': '+{x}% experience for starting small', '· Evoluciona al Nv.{x}': '· Evolves at Lv.{x}',
+  'Las mejoras son de toda la línea evolutiva: cuentan cuando juegas con cualquiera de sus formas.': 'Upgrades belong to the whole evolution line: they count when you play as any of its forms.',
+  'Cambiar compañero': 'Change partner', 'Línea de {x}': '{x} line', 'Tiene mejoras': 'Has upgrades', 'Mejoras de la línea: {x} niveles': 'Line upgrades: {x} levels',
   'Pasiva': 'Passive', 'Huecos': 'Slots', 'Suerte': 'Luck', '+15% tickets del gacha': '+15% gacha tickets', '+1 hueco de movimiento (hasta 6)': '+1 move slot (up to 6)', 'OBJETO': 'ITEM',
   '¡Vapor!': 'Steam!', '¡Rotura!': 'Shatter!', '¡Detonación!': 'Detonation!', '¡Conducción!': 'Conduction!', '¡Congelación!': 'Freeze!',
   'Tormenta Ígnea': 'Fire Tornado', 'Marea Voltio': 'Volt Tide', 'Alud Glacial': 'Glacial Avalanche', 'Llama Tóxica': 'Toxic Blaze',

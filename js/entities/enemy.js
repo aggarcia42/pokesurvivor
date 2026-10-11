@@ -272,7 +272,7 @@
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
       if (this.burn > 0) {
         this.burnT -= dt; this.burnTick -= dt;
-        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
+        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.024), '#ff9a4d'); }
         if (this.burnT <= 0) this.burn = 0;
       }
       if (this.poison > 0) {

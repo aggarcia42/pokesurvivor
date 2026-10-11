@@ -42,6 +42,19 @@ G.MenuUI = (() => {
 
   // ---------------- menú principal ----------------
 
+  /** Línea evolutiva de una especie con sus niveles: "Charmander → Nv.16 Charmeleon → Nv.36 Charizard". */
+  function evoLineHtml(dex) {
+    const line = G.Evos.lineOf(dex);
+    if (line.length <= 1) return '';
+    const parts = [];
+    const walk = (d, lvl) => {
+      parts.push((lvl ? `<span style="color:var(--muted)">Nv.${lvl}</span> ` : '') + `<b${d === dex ? ' class="gold"' : ''}>${G.DEX_BY[d].name}</b>`);
+      for (const x of G.Evos.next(d)) walk(x.to, x.lvl);
+    };
+    walk(G.Evos.family(dex), 0);
+    return `<p class="evo-line" style="font-size:13px;margin:6px 0">${parts.join(' → ')}</p>`;
+  }
+
   function open() {
     const s = G.DB.save;
     const mon = G.DEX_BY[s.partner];
@@ -52,7 +65,9 @@ G.MenuUI = (() => {
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);
     $('menu-partner-name').innerHTML = mon.name + (shiny ? ' ' + G.Icons.html('shiny', 24) : '');
-    $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity);
+    const nx = G.Evos.next(mon.dex)[0];
+    $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity)
+      + (nx ? ` <span style="color:var(--muted);font-size:12px">· Evoluciona al Nv.${nx.lvl}</span>` : '');
 
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     const shinies = Object.keys(s.shiny || {}).length;
@@ -151,6 +166,7 @@ G.MenuUI = (() => {
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
       if (p.dex === s.partner) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Compañero">${G.Icons.html('crown', 14)}</span>`);
       else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
+      if (G.DB.familyUpgradeLevels(p.dex)) cell.insertAdjacentHTML('beforeend', `<span class="badge-l" title="Tiene mejoras">${G.Icons.html('up', 12)}</span>`);
       const useShiny = shinyView(s, p.dex);
       cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, silhouette: !own, shadow: own, shiny: useShiny }));
       cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b>${G.UI.stars(p.rarity, 9)}`);
@@ -194,6 +210,9 @@ G.MenuUI = (() => {
         <h3>${own ? p.name : '???'}</h3>
         <div style="color:${G.Gacha.RARITY_COLOR[p.rarity]}">${G.UI.stars(p.rarity, 24)} ${G.Gacha.RARITY_NAME[p.rarity]}</div>
         <div style="margin:6px 0">${own ? G.UI.typeChips(p.types) : ''}</div>
+        ${own ? evoLineHtml(dex) : ''}
+        ${own && G.Evos.bonusFor(dex) ? `<p style="font-size:13px;color:var(--gold);margin:4px 0">+${Math.round(G.Evos.bonusFor(dex) * 100)}% de experiencia por empezar pequeño</p>` : ''}
+        ${own && G.DB.familyUpgradeLevels(dex) ? `<p style="font-size:13px;margin:4px 0">${G.Icons.html('up', 12)} Mejoras de la línea: ${G.DB.familyUpgradeLevels(dex)} niveles</p>` : ''}
       </div>
       ${own ? `
         ${bar('Vida', p.hp, max.hp, p.hp)}
@@ -230,16 +249,9 @@ G.MenuUI = (() => {
 
   function openUpgrades() {
     G.UI.show('scr-upgrades', true);
-    const s = G.DB.save;
-    if (!upgDex || !s.owned[upgDex]) upgDex = s.partner;
-    // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
-    const sel = $('upg-mon');
-    const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);
-    const mons = Object.keys(s.owned).map(Number).filter(d => G.DEX_BY[d])
-      .sort((a, b) => (b === s.partner) - (a === s.partner) || lv(b) - lv(a) || a - b);
-    sel.innerHTML = mons.map(d => `<option value="${d}">${G.DEX_BY[d].name}${d === s.partner ? ' (compañero)' : ''}${lv(d) ? ' · ' + lv(d) + ' niveles' : ''}</option>`).join('');
-    sel.value = upgDex;
-    sel.onchange = () => { upgDex = +sel.value; G.Audio.sfx('select'); renderUpgrades(); };
+    // Siempre el compañero elegido en el menú Pokémon (las mejoras son de su línea evolutiva).
+    upgDex = G.DB.save.partner;
+    $('upg-change').onclick = () => { G.Audio.sfx('click'); openDex(); };
     renderUpgrades();
   }
 
@@ -250,6 +262,8 @@ G.MenuUI = (() => {
     const shiny = upgDex === s.partner && !!s.partnerShiny && G.DB.ownsShiny(upgDex);
     G.UI.sprite($('upg-stage'), upgDex, { lively: true, scale: 2, hero: true, shiny });
     $('upg-stage').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
+    const line = G.Evos.lineOf(upgDex);
+    $('upg-family').textContent = line.length > 1 ? 'Línea de ' + G.DEX_BY[G.Evos.family(upgDex)].name : mon.name;
     const box = $('upg-list');
     box.innerHTML = '';
     for (const u of G.Upgrades.LIST) {
@@ -284,5 +298,5 @@ G.MenuUI = (() => {
     }
   }
 
-  return { init, open, shinyView, GEN_NAMES };
+  return { init, open, shinyView, evoLineHtml, GEN_NAMES };
 })();

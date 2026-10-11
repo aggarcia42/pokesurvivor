@@ -555,6 +555,142 @@ test('Pokédex: un shiny que tienes se ve shiny en la cuadrícula y en la ficha;
   eq(G.MenuUI.shinyView(s, 4), false, 'sin shiny');
 });
 
+// ---- Evolución en la run: datos
+load('js/data/evolutions.js');
+load('js/data/evos.js');
+test('todas las especies tienen entrada de evolución y los destinos existen', () => {
+  for (const p of G.DEX) {
+    const e = G.EVOS[p.dex];
+    ok(e, p.dex + ' sin entrada');
+    ok(G.DEX_BY[e.fam], p.dex + ' familia inexistente ' + e.fam);
+    for (const x of e.evo) { ok(G.DEX_BY[x.to], p.dex + ' → ' + x.to + ' no está en el juego'); ok(x.lvl >= 1 && x.lvl <= 100, p.dex + ' nivel ' + x.lvl); }
+  }
+});
+test('niveles reales, intercambio a 50, piedras a 36, ramas de Eevee', () => {
+  eq(G.EVOS[4].evo, [{ to: 5, lvl: 16 }]);            // Charmander → Charmeleon
+  eq(G.EVOS[5].evo, [{ to: 6, lvl: 36 }]);            // Charmeleon → Charizard
+  eq(G.EVOS[64].evo, [{ to: 65, lvl: 50 }]);          // Kadabra → Alakazam (intercambio)
+  eq(G.EVOS[25].evo, [{ to: 26, lvl: 36 }]);          // Pikachu → Raichu (piedra)
+  ok(G.EVOS[133].evo.length >= 5, 'Eevee ramas: ' + G.EVOS[133].evo.length);
+  eq(G.EVOS[6].evo, []);
+});
+test('familia, etapa, línea y bonus', () => {
+  eq(G.Evos.family(6), 4); eq(G.Evos.family(4), 4);
+  eq(G.Evos.stage(4), 0); eq(G.Evos.stage(5), 1); eq(G.Evos.stage(6), 2);
+  eq(G.Evos.lineOf(5), [4, 5, 6]);
+  eq(G.Evos.next(5), [{ to: 6, lvl: 36 }]);
+  ok(Math.abs(G.Evos.bonusFor(4) - 0.30) < 1e-9); ok(Math.abs(G.Evos.bonusFor(5) - 0.15) < 1e-9); eq(G.Evos.bonusFor(6), 0);
+});
+test('especie sin entrada se comporta como familia de una etapa', () => {
+  eq(G.Evos.family(99999), 99999); eq(G.Evos.next(99999), []); eq(G.Evos.stage(99999), 0);
+  eq(G.Evos.lineOf(99999), [99999]); ok(Math.abs(G.Evos.bonusFor(99999) - 0.30) < 1e-9);
+});
+
+// ---- Nivel 1-100
+test('curva: fórmula, nivel 60 cuesta lo que costaba el 24, y el 100 unas 3 veces más', () => {
+  eq(G.Player.MAX_LEVEL, 100);
+  eq(G.Player.xpFor(1), Math.floor((3 + 1.2 + 0.25) * 4.19));
+  eq(G.Player.xpFor(60), Math.floor((3 + 72 + 0.25 * Math.pow(60, 1.5)) * 4.19));
+  const oldCum = L => { let s = 0; for (let i = 1; i < L; i++) s += Math.floor((8 + i * 6 + Math.pow(i, 1.75) * 1.6) * 4); return s; };
+  ok(Math.abs(G.Player.cumXp(60) - oldCum(24)) / oldCum(24) < 0.01, 'cum60 ' + G.Player.cumXp(60) + ' vs ' + oldCum(24));
+  const r = G.Player.cumXp(100) / G.Player.cumXp(60); ok(r > 2.9 && r < 3.5, 'ratio ' + r);
+});
+test('agenda de cartas: 37 picks hasta el 60 y 51 hasta el 100', () => {
+  const count = to => { let n = 0; for (let L = 2; L <= to; L++) if (G.LevelUp.picksAt(L)) n++; return n; };
+  eq(count(60), 37); eq(count(100), 51);
+  ok(G.LevelUp.picksAt(2) && G.LevelUp.picksAt(20) && G.LevelUp.picksAt(22) && !G.LevelUp.picksAt(21) && G.LevelUp.picksAt(53) && !G.LevelUp.picksAt(52) && G.LevelUp.picksAt(100));
+});
+test('gainXp: tope en 100, picks según agenda y crecimiento por nivel', () => {
+  const pl = mkPlayer();
+  const hp0 = pl.maxHp, atk0 = pl.atk;
+  const r = pl.gainXp(G.Player.xpFor(1) + G.Player.xpFor(2));     // nivel 1 → 3
+  eq(r.levels, 2); eq(r.picks, 2); eq(r.evo, null); eq(pl.level, 3);
+  ok(Math.abs(pl.maxHp - (hp0 + 2 * pl.mon.hp * 0.01)) < 1e-6, 'vida +1%/nivel');
+  ok(Math.abs(pl.atk / atk0 - 1.01) < 1e-9, 'ataque +0,5%/nivel');
+  pl.gainXp(1e9);
+  eq(pl.level, 100); eq(pl.xp, 0, 'sin exceso por encima del tope');
+  eq(pl.gainXp(1000).levels, 0);
+});
+test('las fórmulas por nivel se reescalan (×0,4)', () => {
+  const rd = f => require('fs').readFileSync(require('path').join(__dirname, '..', f), 'utf8');
+  ok(rd('js/entities/enemy.js').includes('pl.level * 0.024'), 'quemadura');
+  ok(rd('js/systems/combat.js').includes('pl.level * 1.6'), 'Casco Dentado');
+  ok(rd('js/game.js').includes('pl.level * 5.6'), 'bomba');
+  ok(rd('js/systems/reactions.js').includes('* 0.024'), 'reacciones');
+});
+
+// ---- Evolución en la run
+test('evolveTo cambia especie, tipos y stats; conserva la proporción de vida y los +20 de Vigor', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);          // Charmander
+  pl.addMove('ember'); pl.addPassive('hp');                 // Vigor: +20
+  pl.level = 16; pl.hp = pl.maxHp * 0.5;
+  const ratio = pl.hp / pl.maxHp, hpBefore = pl.maxHp;
+  ok(pl.evolveTo(5));
+  eq(pl.dex, 5); eq(pl.mon.name, G.DEX_BY[5].name); eq(pl.mon.types, G.DEX_BY[5].types);
+  ok(Math.abs(pl.maxHp - (hpBefore - G.DEX_BY[4].hp * 1.15 + G.DEX_BY[5].hp * 1.15)) < 1e-6, 'vida máxima: ' + pl.maxHp);
+  ok(Math.abs(pl.hp / pl.maxHp - ratio) < 1e-9, 'proporción de vida');
+  eq(pl.baseAtk, G.DEX_BY[5].atk); eq(pl.moves.map(m => m.id), ['ember']); eq(pl.passives.map(p => p.id), ['hp']);
+  ok(!pl.evolveTo(99999), 'dex desconocido');
+});
+test('varios niveles de golpe: una evolución y los picks de la agenda', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);
+  pl.level = 14; pl.xpNext = G.Player.xpFor(14);
+  const r = pl.gainXp(G.Player.xpFor(14) + G.Player.xpFor(15) + G.Player.xpFor(16));   // 14 → 17
+  eq(r.levels, 3); eq(r.picks, 3); ok(r.evo && r.evo.options.length === 1 && r.evo.options[0].to === 5, JSON.stringify(r.evo));
+  eq(pl.dex, 4, 'gainXp no evoluciona por sí mismo: lo hace el juego');
+});
+test('ramas: cartas de elección con cada etapa', () => {
+  const pl = new G.Player(G.DEX_BY[133], {}, false);        // Eevee
+  const cards = G.LevelUp.branchCards(pl, G.Evos.next(133));
+  ok(cards.length >= 5); ok(cards.every(c => c.type === 'evo-branch' && c.to));
+  cards[0].apply(pl); eq(pl.dex, G.Evos.next(133)[0].to);
+});
+test('un compañero evoluciona por el estado de red e ignora un dex desconocido', () => {
+  const p = new G.Player(G.DEX_BY[4], {}, false); p.remote = true;
+  p.net = { x: 0, y: 0, ang: 0, walk: 0, hp: 10, maxHp: 10, dead: 0, mvs: 'ember:1:0', mag: 78, aim: 0, rev: 0, dex: 5 };
+  p.netUpdate(0.016); eq(p.dex, 5);
+  p.net.dex = 424242; p.netUpdate(0.016); eq(p.dex, 5);
+});
+
+test('empezar pequeño da bonus de experiencia: base +30%, intermedia +15%, final 0', () => {
+  for (const [dex, k] of [[4, 1.30], [5, 1.15], [6, 1]]) {
+    const pl = new G.Player(G.DEX_BY[dex], G.Upgrades.perks({}), false);
+    pl.xpMul *= 1 + G.Evos.bonusFor(dex);
+    ok(Math.abs(pl.xpMul - k) < 1e-9, dex + ': ' + pl.xpMul);
+  }
+  const html = G.MenuUI.evoLineHtml(5);
+  ok(/Charmander/.test(html) && /16/.test(html) && /36/.test(html), html);
+});
+
+test('las mejoras van por familia y la migración v4 funde las de una familia', () => {
+  G.DB.playAsGuest();
+  const s = G.DB.save;
+  s.pupg = { 4: { atk: 2, hp: 1 }, 6: { atk: 1, spd: 3 }, 25: { cd: 2 }, 7: 'basura' };
+  s.v = 3; delete s.famDone;
+  G.DB.migrateForTest(s);
+  eq(s.pupg[4], { atk: 2, hp: 1, spd: 3 }); ok(!s.pupg[6]); eq(s.pupg[G.Evos.family(25)], { cd: 2 }); ok(!s.pupg[7]); eq(s.v, 4);
+  eq(G.DB.upgradesOf(6), s.pupg[4]); eq(G.DB.familyUpgradeLevels(5), 6); eq(G.DB.familyUpgradeLevels(1), 0);
+});
+
+// ---- Revisión final: arreglos
+test('un invitado sube de nivel por el estado del equipo: crece y detecta la evolución', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);
+  const hp0 = pl.maxHp;
+  const r = pl.syncLevel(17, 12, G.Player.xpFor(17));
+  eq(pl.level, 17); eq(pl.xp, 12); eq(pl.xpNext, G.Player.xpFor(17));
+  ok(Math.abs(pl.maxHp - (hp0 + 16 * pl.mon.hp * 0.01)) < 1e-6, 'vida +1% por cada nivel cruzado: ' + pl.maxHp);
+  ok(r.evo && r.evo.options[0].to === 5, JSON.stringify(r));
+  eq(pl.syncLevel(17, 20, pl.xpNext).evo, null, 'sin nivel nuevo no hay evolución');
+});
+test('ramas con niveles distintos: se eligen todas al llegar al nivel más bajo (Kirlia 30: Gardevoir o Gallade)', () => {
+  const pl = new G.Player(G.DEX_BY[281], {}, false);
+  pl.level = 29; eq(pl.evolutionDue(), null);
+  pl.level = 30;
+  const due = pl.evolutionDue();
+  ok(due && due.options.length === 2, JSON.stringify(due));
+  eq(due.options.map(o => o.to).sort((a, b) => a - b), [282, 475]);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;

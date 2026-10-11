@@ -42,7 +42,9 @@ app ("Añadir a pantalla de inicio"). En **Ajustes** hay sonido, calidad gráfic
 El Pokémon ataca solo con **todos** sus movimientos a la vez (4 huecos, hasta 6
 con la mejora Huecos de la tienda), cada
 uno con su recarga, y lleva hasta 4 **pasivas** con nivel. El movimiento
-**enfocado** pega un 25% más. Al vencer a un legendario ganas un **vínculo**
+**enfocado** pega un 25% más. Tu compañero sube hasta el **nivel 100** y
+**evoluciona en plena run** al nivel de su especie (empezar con la forma pequeña
+da experiencia extra). Al vencer a un legendario ganas un **vínculo**
 para **fusionar** dos movimientos al nivel máximo en uno nuevo, que empieza en
 nivel 1 y gana daño y velocidad al subir. Las rocas, cofres y la hierba
 alta se rompen; las paredes y los árboles bloquean los disparos enemigos; el

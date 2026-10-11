@@ -104,10 +104,12 @@ G.Game = (() => {
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(0, true);
     biome = 0;
-    time = 0; pendingLevels = 0;
+    time = 0; pendingLevels = 0; branchChoice = null;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
     banked = { t1: 0, t10: 0 };
+    // Empezar pequeño paga: +30% de experiencia desde la forma base, +15% desde la intermedia.
+    pl.xpMul *= 1 + G.Evos.bonusFor(mon.dex);
     caught = [];
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
@@ -182,7 +184,9 @@ G.Game = (() => {
     syncTeam(t) {
       if (Math.abs(t.time - time) > 0.4) time = t.time;
       if (t.level > pl.level) G.Audio.sfx('xp');
-      pl.level = t.level; pl.xp = t.xp; pl.xpNext = t.xpNext;
+      // El invitado también crece y evoluciona (sólo el anfitrión reparte experiencia).
+      const g = pl.syncLevel(t.level, t.xp, t.xpNext);
+      if (g.evo) onEvolutionDue(g.evo);
       pl.kills = t.kills; pl.bosses = t.bosses; pl.coins = t.coins;
       if (t.t1 > pl.t1 || t.t10 > pl.t10) G.Audio.sfx('shiny');
       pl.t1 = t.t1 || 0; pl.t10 = t.t10 || 0;
@@ -290,8 +294,11 @@ G.Game = (() => {
   // ---------------- subida de nivel ----------------
 
   function maybeLevelUp() {
-    if (pendingLevels <= 0 || state !== 'playing') return;
+    if ((pendingLevels <= 0 && !branchChoice) || state !== 'playing') return;
     if (G.Coop.active) {
+      // En grupo el juego no se para: una evolución con ramas se resuelve con la primera.
+      if (branchChoice) { const b = branchChoice; branchChoice = null; if (!pl.dead) evolvePartner(b[0].to); }
+      if (pendingLevels <= 0) return;
       // En grupo, las cartas salen a la vez para todos y se espera a que elijan.
       if (G.Coop.players().every(p => p.dead)) return;
       pendingLevels--;
@@ -300,6 +307,19 @@ G.Game = (() => {
     }
     // Nunca abras cartas con el Pokémon caído (morir y recoger XP en el mismo frame).
     if (pl.dead) return;
+    // Evolución con ramas (Eevee…): se elige la etapa antes que cualquier carta.
+    if (branchChoice) {
+      const opts = branchChoice; branchChoice = null;
+      state = 'levelup';
+      G.Audio.sfx('levelup');
+      G.RunUI.showLevelUp(pl.level, G.LevelUp.branchCards(pl, opts), card => {
+        G.Audio.sfx('confirm');
+        evolvePartner(card.to);          // la carta lleva `to`; evolvePartner hace el cambio y la presentación
+        state = 'playing';
+      });
+      return;
+    }
+    if (pendingLevels <= 0) return;
     pendingLevels--;
     state = 'levelup';
     G.Audio.sfx('levelup');
@@ -308,6 +328,31 @@ G.Game = (() => {
       card.apply(pl);
       state = 'playing';
     });
+  }
+
+  // ---------------- evolución del compañero ----------------
+
+  let branchChoice = null;     // opciones pendientes de una evolución con ramas (Eevee…)
+
+  /** gainXp ha cruzado un nivel de evolución: una sola etapa evoluciona ya; varias, se elige. */
+  function onEvolutionDue(evo) {
+    if (!pl || pl.dead) return;
+    if (evo.options.length === 1) evolvePartner(evo.options[0].to);
+    else branchChoice = evo.options;
+  }
+
+  /** Evoluciona al compañero con fanfarria, lo desbloquea en la colección y lo apunta. */
+  function evolvePartner(to) {
+    const from = pl.mon;
+    if (!pl.evolveTo(to)) return;
+    flash('#ffffff', 0.5);
+    G.FX.ring(pl.x, pl.y, 8, 140, '#ffe14d', 0.8, 6);
+    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffffff', 50, 260);
+    G.Audio.sfx('legend');
+    G.Spawner.say('¡' + from.name + ' evolucionó en ' + pl.mon.name + '!', 3.5, true);
+    if (!G.DB.owns(to)) G.DB.grant(to, 'evolution');
+    G.Progress.event('evolvePartner', { from: from.dex, to });
+    G.DB.commit();
   }
 
   // ---------------- vínculos: fusiones ----------------
@@ -374,7 +419,9 @@ G.Game = (() => {
     if (G.Coop.active) G.Coop.collected(p, who);
     if (mine || p.kind === 'bomb') G.Audio.sfx(PICK_SFX[p.kind]);
     if (p.kind === 'xp' || p.kind === 'xpBig') {
-      pendingLevels += pl.gainXp(p.value * (G.Coop.active ? G.Coop.xpFactor() : 1));
+      const g = pl.gainXp(p.value * (G.Coop.active ? G.Coop.xpFactor() : 1));
+      pendingLevels += g.picks;
+      if (g.evo) onEvolutionDue(g.evo);
       return;
     }
     if (p.kind === 'coin') {
@@ -409,7 +456,7 @@ G.Game = (() => {
       G.FX.ring(who.x, who.y, 20, R, '#ff7b3d', 0.5, 6);
       for (const e of G.EnemyMgr.all()) {
         if (mine ? !G.Camera.sees(e.x, e.y, 0) : G.U.dist2(e.x, e.y, who.x, who.y) > R * R) continue;
-        e.hurt(60 + pl.level * 14, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
+        e.hurt(60 + pl.level * 5.6, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
       }
     }
   }

@@ -100,6 +100,29 @@ Menú principal  (el mundo de fondo, con Pokémon salvajes paseando)
 - Los enemigos aguantan más cuantos más ataques llevas: ×(1 + 0,4·(ataques − 1)),
   con la media del equipo (jefes: 0,3).
 
+### 3.1 Nivel 1-100 y evolución del compañero (2026-10-11)
+
+- **Nivel 1-100** como en Mundo Misterioso. Experiencia para pasar de nivel:
+  `floor((3 + 1,2·L + 0,25·L^1,5) × 4,19)`, calibrada para que el nivel 60 cueste
+  lo que costaba el 24 (final de una run normal de 25 min) y el 100 unas 3 veces
+  más: sólo con las mejoras de experiencia (Sabiduría, Aprendizaje, Huevo Suerte).
+  Cada nivel da +1% de la vida de la especie y +0,5% de ataque.
+- **Cartas con agenda:** una carta en cada nivel hasta el 20, cada 2 hasta el 50,
+  cada 3 hasta el 98 y en el 100 (37 cartas hasta el 60, 51 hasta el 100: da para
+  llevar al máximo seis ataques y cuatro pasivas).
+- **Evolución en la run:** al llegar al nivel de evolución de su especie (los de
+  los juegos; intercambio = 50; piedras, amistad y demás = 36; datos en
+  `js/data/evolutions.js`), el compañero evoluciona en el acto: destello, aviso,
+  sprite, stats y tipos nuevos; se quedan movimientos, pasivas, objeto, nivel y
+  experiencia, y la vida conserva su proporción. Las líneas con ramas (Eevee…)
+  enseñan una carta por etapa para elegir (en grupo, la primera). Evolucionar
+  desbloquea la forma evolucionada en la colección (la shiny no: gacha o salvaje).
+- **Empezar pequeño paga:** +30% de experiencia desde la forma base, +15% desde
+  la intermedia, nada desde la final. El menú y la Pokédex lo enseñan, con la
+  línea evolutiva y sus niveles.
+- Las fórmulas que usaban el nivel (quemadura, Casco Dentado, bomba, reacciones)
+  van ×0,4; misiones de nivel 20/30/38 y logros de nivel 38 y 75.
+
 ## 4. Mundo
 
 Arena abierta e infinita, generada con ruido determinista y pintada en pixel art
@@ -232,11 +255,12 @@ multiplicado por la mejora Fortuna. Cuenta nueva: 500 de regalo.
 
 Las monedas sirven para las **mejoras**; el gacha va con tickets.
 
-### 7.2 Mejoras permanentes — de cada Pokémon
+### 7.2 Mejoras permanentes — de cada línea evolutiva
 Vitalidad, Fuerza, Zancada, Reflejos, Coraza, Síntesis, Imán, Sabiduría, Fortuna
 **Repertorio (empezar con 2 movimientos)**, **Huecos (+1 hueco de movimiento,
 2 niveles: de 4 huecos de serie a 6)** y **Suerte (+15% tickets del gacha, 5
-niveles)**. Cada Pokémon tiene las suyas y
+niveles)**. Son de la **línea evolutiva** (Charmander, Charmeleon y Charizard
+comparten; las partidas antiguas se fusionan al cargar) y
 sólo cuentan cuando juegas con él (en la pantalla de Mejoras se elige cuál).
 Las que se compraron cuando eran de la cuenta pasaron al compañero de entonces.
 
@@ -558,3 +582,11 @@ guitarra punteada, bajo, pad, lead y batería, con reverb). Cero ficheros.
 - Agua nada y Volador planea sobre líquidos, cada uno con su pequeño peaje.
 - Código: las familias de movimiento viven en systems/move-kinds.js, todo el daño
   pasa por Combat.damage(), y hay pruebas en Node (tools/test.js).
+
+**2026-10-11 · evolución en la run**
+- Nivel 1-100 con curva nueva y cartas con agenda; el compañero evoluciona en la
+  run al nivel real de su especie (intercambio 50, piedras y demás 36), con ramas
+  a elegir, y la forma evolucionada se desbloquea. Empezar pequeño da experiencia.
+- Mejoras permanentes por línea evolutiva (migración v4) y pantalla de mejoras
+  sin selector: siempre el compañero, con botón al menú Pokémon y marca en la
+  Pokédex de las líneas con mejoras.
