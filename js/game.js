@@ -166,7 +166,9 @@ G.Game = (() => {
     syncTeam(t) {
       if (Math.abs(t.time - time) > 0.4) time = t.time;
       if (t.level > pl.level) G.Audio.sfx('xp');
-      pl.level = t.level; pl.xp = t.xp; pl.xpNext = t.xpNext;
+      // El invitado también crece y evoluciona (sólo el anfitrión reparte experiencia).
+      const g = pl.syncLevel(t.level, t.xp, t.xpNext);
+      if (g.evo) onEvolutionDue(g.evo);
       pl.kills = t.kills; pl.bosses = t.bosses; pl.coins = t.coins;
       if (t.t1 > pl.t1 || t.t10 > pl.t10) G.Audio.sfx('shiny');
       pl.t1 = t.t1 || 0; pl.t10 = t.t10 || 0;

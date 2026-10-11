@@ -319,10 +319,33 @@ G.Player = class Player {
     return r;
   }
 
-  /** Etapas a las que ya se puede evolucionar con el nivel actual, o null. */
+  /**
+   * Etapas a las que ya se puede evolucionar con el nivel actual, o null.
+   * Con varias ramas (Eevee, Kirlia → Gardevoir 30 / Gallade 36) se ofrecen
+   * TODAS al llegar al nivel más bajo: si no, la rama tardía nunca saldría.
+   */
   evolutionDue() {
-    const opts = G.Evos.next(this.dex).filter(x => x.lvl <= this.level && G.DEX_BY[x.to]);
-    return opts.length ? { options: opts } : null;
+    const nx = G.Evos.next(this.dex).filter(x => G.DEX_BY[x.to]);
+    if (!nx.length) return null;
+    if (nx.length > 1) return this.level >= Math.min(...nx.map(x => x.lvl)) ? { options: nx } : null;
+    return nx[0].lvl <= this.level ? { options: nx } : null;
+  }
+
+  /**
+   * Invitado en cooperativo: el anfitrión manda el nivel. Se aplica el
+   * crecimiento de cada nivel cruzado y se avisa si toca evolucionar.
+   */
+  syncLevel(level, xp, xpNext) {
+    const r = { levels: 0, evo: null };
+    while (this.level < level) {
+      this.level++;
+      r.levels++;
+      const g = this.mon.hp * 0.01;
+      this.maxHp += g; this.hp += g;
+      if (!r.evo) r.evo = this.evolutionDue();
+    }
+    this.level = level; this.xp = xp; this.xpNext = xpNext;
+    return r;
   }
 
   /**

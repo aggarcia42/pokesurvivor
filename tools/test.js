@@ -672,6 +672,25 @@ test('las mejoras van por familia y la migración v4 funde las de una familia', 
   eq(G.DB.upgradesOf(6), s.pupg[4]); eq(G.DB.familyUpgradeLevels(5), 6); eq(G.DB.familyUpgradeLevels(1), 0);
 });
 
+// ---- Revisión final: arreglos
+test('un invitado sube de nivel por el estado del equipo: crece y detecta la evolución', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);
+  const hp0 = pl.maxHp;
+  const r = pl.syncLevel(17, 12, G.Player.xpFor(17));
+  eq(pl.level, 17); eq(pl.xp, 12); eq(pl.xpNext, G.Player.xpFor(17));
+  ok(Math.abs(pl.maxHp - (hp0 + 16 * pl.mon.hp * 0.01)) < 1e-6, 'vida +1% por cada nivel cruzado: ' + pl.maxHp);
+  ok(r.evo && r.evo.options[0].to === 5, JSON.stringify(r));
+  eq(pl.syncLevel(17, 20, pl.xpNext).evo, null, 'sin nivel nuevo no hay evolución');
+});
+test('ramas con niveles distintos: se eligen todas al llegar al nivel más bajo (Kirlia 30: Gardevoir o Gallade)', () => {
+  const pl = new G.Player(G.DEX_BY[281], {}, false);
+  pl.level = 29; eq(pl.evolutionDue(), null);
+  pl.level = 30;
+  const due = pl.evolutionDue();
+  ok(due && due.options.length === 2, JSON.stringify(due));
+  eq(due.options.map(o => o.to).sort((a, b) => a - b), [282, 475]);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;
