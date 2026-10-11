@@ -366,6 +366,9 @@ G.Player = class Player {
     this.baseAtk = to.atk; this.baseSpd = to.spd;
     this.shiny = this.shiny && G.Sprites.hasShiny(dex);
     const dir = this.anim.dir;
+    // Animación de evolución (ver draw): la forma vieja se vuelve blanca, late y
+    // de ese blanco sale la nueva. Nada de destellos a pantalla completa.
+    this.evoFx = { t: 0, dur: 1.1, old: this.anim, sparkT: 0 };
     this.anim = new G.Sprites.Animator(dex, 1, this.shiny);
     this.anim.dir = dir;
     this.r = G.Sprites.bodyRadius(dex); this.bodyH = G.Sprites.bodyHeight(dex);
@@ -399,6 +402,16 @@ G.Player = class Player {
   // ---------------- ciclo ----------------
   update(dt) {
     this.anim.update(dt);
+    if (this.evoFx) {
+      const f = this.evoFx;
+      f.t += dt; f.old.update(dt);
+      f.sparkT -= dt;
+      if (f.sparkT <= 0 && G.Camera.sees(this.x, this.y, 0)) {
+        f.sparkT = 0.05;
+        G.FX.twinkle(this.x + G.U.rand(-this.r * 1.6, this.r * 1.6), this.y - G.U.rand(0, this.bodyH * 1.2));
+      }
+      if (f.t >= f.dur) this.evoFx = null;
+    }
     if (this.dead) return;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
@@ -494,6 +507,33 @@ G.Player = class Player {
     this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
   }
 
+  /**
+   * Animación de evolución, en tres tramos de evoFx.dur:
+   *   0-45%   la forma vieja se va volviendo blanca
+   *   45-60%  silueta blanca que late (un poco más grande)
+   *   60-100% la forma nueva aparece desde el blanco
+   */
+  drawEvolving(ctx) {
+    const f = this.evoFx, k = f.t / f.dur;
+    const white = (anim, a, scale = 1) => {
+      ctx.save();
+      if (scale !== 1) { ctx.translate(this.x, this.y); ctx.scale(scale, scale); ctx.translate(-this.x, -this.y); }
+      anim.draw(ctx, this.x, this.y, { flash: true, softFlash: false, alpha: a });
+      ctx.restore();
+    };
+    if (k < 0.45) {
+      f.old.draw(ctx, this.x, this.y, {});
+      white(f.old, k / 0.45);
+    } else if (k < 0.6) {
+      const p = (k - 0.45) / 0.15;
+      white(f.old, 1, 1 + 0.18 * Math.sin(p * Math.PI));
+    } else {
+      const p = (k - 0.6) / 0.4;
+      this.anim.draw(ctx, this.x, this.y, {});
+      white(this.anim, 1 - p);
+    }
+  }
+
   /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
   revive(frac = 0.5) {
     this.dead = false;
@@ -565,8 +605,9 @@ G.Player = class Player {
       ctx.restore();
     }
 
-    const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
-    this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    const alpha = this.invuln > 0 && !this.dead && !this.evoFx ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    if (this.evoFx) this.drawEvolving(ctx);
+    else this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
 
     // Cooperativo: anillo de "reviviendo" y nombre encima.
     if (this.dead && this.reviveT > 0) {

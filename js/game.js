@@ -345,9 +345,8 @@ G.Game = (() => {
   function evolvePartner(to) {
     const from = pl.mon;
     if (!pl.evolveTo(to)) return;
-    flash('#ffffff', 0.5);
-    G.FX.ring(pl.x, pl.y, 8, 140, '#ffe14d', 0.8, 6);
-    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffffff', 50, 260);
+    // La animación va en el propio sprite (Player.drawEvolving); aquí sólo un aro suave.
+    G.FX.ring(pl.x, pl.y, 8, 90, '#ffe14d', 0.7, 3);
     G.Audio.sfx('legend');
     G.Spawner.say('¡' + from.name + ' evolucionó en ' + pl.mon.name + '!', 3.5, true);
     if (!G.DB.owns(to)) G.DB.grant(to, 'evolution');

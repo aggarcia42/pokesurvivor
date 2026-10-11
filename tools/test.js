@@ -691,6 +691,19 @@ test('ramas con niveles distintos: se eligen todas al llegar al nivel más bajo 
   eq(due.options.map(o => o.to).sort((a, b) => a - b), [282, 475]);
 });
 
+test('al evolucionar hay una animación corta del sprite que acaba sola (sin destello de pantalla)', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);
+  const oldAnim = pl.anim;
+  pl.level = 16; ok(pl.evolveTo(5));
+  ok(pl.evoFx && pl.evoFx.old === oldAnim && pl.evoFx.t === 0 && pl.evoFx.dur > 0.5, 'animación en marcha con el sprite viejo');
+  for (let i = 0; i < 30; i++) pl.update(0.02);            // 0,6 s: a medias
+  ok(pl.evoFx && pl.evoFx.t > 0.5, 'sigue a medias');
+  for (let i = 0; i < 40; i++) pl.update(0.02);            // 1,4 s en total: terminada
+  eq(pl.evoFx, null, 'la animación debe terminar sola');
+  const g = require('fs').readFileSync(require('path').join(__dirname, '..', 'js/game.js'), 'utf8');
+  ok(!/function evolvePartner[\s\S]*?flash\('#ffffff'/.test(g), 'evolvePartner no debe usar el destello de pantalla');
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;
