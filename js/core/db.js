@@ -79,7 +79,7 @@ G.DB = (() => {
       missions: {},           // misiones del día / semana (systems/progress.js)
       profile: { favs: [], title: '' },   // perfil público: 3 favoritos y título
       stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, coinsEarned: 0, shinies: 0,
-               bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
+               bossesTotal: 0, riftWins: 0, evolutions: 0, partnerEvos: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
     };
   }
 

@@ -319,8 +319,37 @@ G.Player = class Player {
     return r;
   }
 
-  /** Etapas a las que ya se puede evolucionar con el nivel actual, o null (ver evolveTo). */
-  evolutionDue() { return null; }
+  /** Etapas a las que ya se puede evolucionar con el nivel actual, o null. */
+  evolutionDue() {
+    const opts = G.Evos.next(this.dex).filter(x => x.lvl <= this.level && G.DEX_BY[x.to]);
+    return opts.length ? { options: opts } : null;
+  }
+
+  /**
+   * Evoluciona en plena run: cambia especie, sprite, stats y tipos. Se quedan
+   * movimientos, pasivas, objeto, nivel y experiencia. La vida máxima se
+   * recalcula con la vida de la nueva especie (y su crecimiento por nivel)
+   * conservando lo demás (Vigor, mejoras) y la proporción de vida actual.
+   */
+  evolveTo(dex) {
+    const to = G.DEX_BY[dex];
+    if (!to || dex === this.dex) return false;
+    const from = this.mon;
+    const growth = 1 + (this.level - 1) * 0.01;
+    const ratio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
+    this.maxHp = this.maxHp - from.hp * growth + to.hp * growth;
+    this.hp = this.maxHp * ratio;
+    this.mon = to; this.dex = dex;
+    this.baseAtk = to.atk; this.baseSpd = to.spd;
+    this.shiny = this.shiny && G.Sprites.hasShiny(dex);
+    const dir = this.anim.dir;
+    this.anim = new G.Sprites.Animator(dex, 1, this.shiny);
+    this.anim.dir = dir;
+    this.r = G.Sprites.bodyRadius(dex); this.bodyH = G.Sprites.bodyHeight(dex);
+    G.Sprites.preload([dex], 8000, this.shiny);
+    this.invuln = Math.max(this.invuln || 0, 1);
+    return true;
+  }
 
   // ---------------- objeto equipado ----------------
   hasItem(id) { return this.item === id; }
@@ -459,7 +488,7 @@ G.Player = class Player {
   /**
    * Un compañero en otro ordenador: su dueño manda su estado (posición, vida,
    * movimiento activo...) y aquí se sigue con suavidad.
-   * n = { x, y, ang, walk, hp, maxHp, dead, mvs, mag, aim, rev }
+   * n = { x, y, ang, walk, hp, maxHp, dead, mvs, mag, aim, rev, dex }
    */
   netUpdate(dt) {
     this.anim.update(dt);
@@ -475,6 +504,8 @@ G.Player = class Player {
     this.reviveT = n.rev || 0;
     if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
     else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
+    // Especie (evoluciona en su ordenador; aquí se cambia el sprite).
+    if (n.dex && n.dex !== this.dex && G.DEX_BY[n.dex]) this.evolveTo(n.dex);
     // Movimientos del compañero (para el HUD, los orbes y los fantasmas).
     if (n.mvs !== this.netMvs) {
       const list = Player.parseMoves(n.mvs);

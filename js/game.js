@@ -104,7 +104,7 @@ G.Game = (() => {
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(0, true);
     biome = 0;
-    time = 0; pendingLevels = 0;
+    time = 0; pendingLevels = 0; branchChoice = null;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
     caught = [];
@@ -273,8 +273,11 @@ G.Game = (() => {
   // ---------------- subida de nivel ----------------
 
   function maybeLevelUp() {
-    if (pendingLevels <= 0 || state !== 'playing') return;
+    if ((pendingLevels <= 0 && !branchChoice) || state !== 'playing') return;
     if (G.Coop.active) {
+      // En grupo el juego no se para: una evolución con ramas se resuelve con la primera.
+      if (branchChoice) { const b = branchChoice; branchChoice = null; if (!pl.dead) evolvePartner(b[0].to); }
+      if (pendingLevels <= 0) return;
       // En grupo, las cartas salen a la vez para todos y se espera a que elijan.
       if (G.Coop.players().every(p => p.dead)) return;
       pendingLevels--;
@@ -283,6 +286,19 @@ G.Game = (() => {
     }
     // Nunca abras cartas con el Pokémon caído (morir y recoger XP en el mismo frame).
     if (pl.dead) return;
+    // Evolución con ramas (Eevee…): se elige la etapa antes que cualquier carta.
+    if (branchChoice) {
+      const opts = branchChoice; branchChoice = null;
+      state = 'levelup';
+      G.Audio.sfx('levelup');
+      G.RunUI.showLevelUp(pl.level, G.LevelUp.branchCards(pl, opts), card => {
+        G.Audio.sfx('confirm');
+        evolvePartner(card.to);          // la carta lleva `to`; evolvePartner hace el cambio y la presentación
+        state = 'playing';
+      });
+      return;
+    }
+    if (pendingLevels <= 0) return;
     pendingLevels--;
     state = 'levelup';
     G.Audio.sfx('levelup');
@@ -295,8 +311,28 @@ G.Game = (() => {
 
   // ---------------- evolución del compañero ----------------
 
-  /** gainXp ha cruzado un nivel de evolución (se completa en la tarea 3). */
-  function onEvolutionDue(evo) { /* ver evolvePartner */ }
+  let branchChoice = null;     // opciones pendientes de una evolución con ramas (Eevee…)
+
+  /** gainXp ha cruzado un nivel de evolución: una sola etapa evoluciona ya; varias, se elige. */
+  function onEvolutionDue(evo) {
+    if (!pl || pl.dead) return;
+    if (evo.options.length === 1) evolvePartner(evo.options[0].to);
+    else branchChoice = evo.options;
+  }
+
+  /** Evoluciona al compañero con fanfarria, lo desbloquea en la colección y lo apunta. */
+  function evolvePartner(to) {
+    const from = pl.mon;
+    if (!pl.evolveTo(to)) return;
+    flash('#ffffff', 0.5);
+    G.FX.ring(pl.x, pl.y, 8, 140, '#ffe14d', 0.8, 6);
+    G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffffff', 50, 260);
+    G.Audio.sfx('legend');
+    G.Spawner.say('¡' + from.name + ' evolucionó en ' + pl.mon.name + '!', 3.5, true);
+    if (!G.DB.owns(to)) G.DB.grant(to, 'evolution');
+    G.Progress.event('evolvePartner', { from: from.dex, to });
+    G.DB.commit();
+  }
 
   // ---------------- vínculos: fusiones ----------------
 

@@ -113,5 +113,16 @@ G.LevelUp = (() => {
     return level === 100;
   }
 
-  return { offer, candidates, picksAt, BONUS };
+  /** Cartas de elección de rama (Eevee…): una por etapa posible. El juego evoluciona con `card.to`. */
+  function branchCards(pl, options) {
+    return options.map(o => {
+      const d = G.DEX_BY[o.to];
+      return { w: 1, type: 'evo-branch', key: 'branch:' + o.to, to: o.to, icon: 'type:' + d.types[0], color: G.U.TYPE_COLOR[d.types[0]],
+               tag: 'EVOLUCIÓN', title: d.name,
+               desc: G.U.TYPE_NAME[d.types[0]] + (d.types[1] ? ' · ' + G.U.TYPE_NAME[d.types[1]] : '') + ' · vida ' + d.hp + ' · ataque ×' + d.atk.toFixed(2),
+               apply: p => p.evolveTo(o.to) };
+    });
+  }
+
+  return { offer, candidates, picksAt, branchCards, BONUS };
 })();

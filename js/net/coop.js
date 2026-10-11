@@ -62,7 +62,7 @@ G.Coop = (() => {
       const p = new G.Player(mon, {}, !!m.shiny);
       p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
       p.x = x; p.y = y;
-      p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mvs: G.startMoveOf(mon.dex) + ':1:0', mag: 78, aim: Math.PI / 2, rev: 0 };
+      p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mvs: G.startMoveOf(mon.dex) + ':1:0', dex: mon.dex, mag: 78, aim: Math.PI / 2, rev: 0 };
       G.Sprites.preload([mon.dex], 8000, p.shiny);
       mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1 });
     });
@@ -115,12 +115,12 @@ G.Coop = (() => {
     // Toda la lista de movimientos ("id:nivel:evolucionado,..."): el HUD, los orbes y los fantasmas de los demás.
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, G.Player.packMoves(local.moves), r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0)];
+            r2(local.reviveT || 0), local.dex];
   }
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mvs: a[7],
-             mag: a[8], aim: a[9], xpMul: a[10], rev: a[11] };
+             mag: a[8], aim: a[9], xpMul: a[10], rev: a[11], dex: a[12] };
   }
 
   // ---------------- envío ----------------

@@ -619,6 +619,39 @@ test('las fórmulas por nivel se reescalan (×0,4)', () => {
   ok(rd('js/systems/reactions.js').includes('* 0.024'), 'reacciones');
 });
 
+// ---- Evolución en la run
+test('evolveTo cambia especie, tipos y stats; conserva la proporción de vida y los +20 de Vigor', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);          // Charmander
+  pl.addMove('ember'); pl.addPassive('hp');                 // Vigor: +20
+  pl.level = 16; pl.hp = pl.maxHp * 0.5;
+  const ratio = pl.hp / pl.maxHp, hpBefore = pl.maxHp;
+  ok(pl.evolveTo(5));
+  eq(pl.dex, 5); eq(pl.mon.name, G.DEX_BY[5].name); eq(pl.mon.types, G.DEX_BY[5].types);
+  ok(Math.abs(pl.maxHp - (hpBefore - G.DEX_BY[4].hp * 1.15 + G.DEX_BY[5].hp * 1.15)) < 1e-6, 'vida máxima: ' + pl.maxHp);
+  ok(Math.abs(pl.hp / pl.maxHp - ratio) < 1e-9, 'proporción de vida');
+  eq(pl.baseAtk, G.DEX_BY[5].atk); eq(pl.moves.map(m => m.id), ['ember']); eq(pl.passives.map(p => p.id), ['hp']);
+  ok(!pl.evolveTo(99999), 'dex desconocido');
+});
+test('varios niveles de golpe: una evolución y los picks de la agenda', () => {
+  const pl = new G.Player(G.DEX_BY[4], {}, false);
+  pl.level = 14; pl.xpNext = G.Player.xpFor(14);
+  const r = pl.gainXp(G.Player.xpFor(14) + G.Player.xpFor(15) + G.Player.xpFor(16));   // 14 → 17
+  eq(r.levels, 3); eq(r.picks, 3); ok(r.evo && r.evo.options.length === 1 && r.evo.options[0].to === 5, JSON.stringify(r.evo));
+  eq(pl.dex, 4, 'gainXp no evoluciona por sí mismo: lo hace el juego');
+});
+test('ramas: cartas de elección con cada etapa', () => {
+  const pl = new G.Player(G.DEX_BY[133], {}, false);        // Eevee
+  const cards = G.LevelUp.branchCards(pl, G.Evos.next(133));
+  ok(cards.length >= 5); ok(cards.every(c => c.type === 'evo-branch' && c.to));
+  cards[0].apply(pl); eq(pl.dex, G.Evos.next(133)[0].to);
+});
+test('un compañero evoluciona por el estado de red e ignora un dex desconocido', () => {
+  const p = new G.Player(G.DEX_BY[4], {}, false); p.remote = true;
+  p.net = { x: 0, y: 0, ang: 0, walk: 0, hp: 10, maxHp: 10, dead: 0, mvs: 'ember:1:0', mag: 78, aim: 0, rev: 0, dex: 5 };
+  p.netUpdate(0.016); eq(p.dex, 5);
+  p.net.dex = 424242; p.netUpdate(0.016); eq(p.dex, 5);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;
