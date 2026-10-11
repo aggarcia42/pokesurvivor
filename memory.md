@@ -72,6 +72,17 @@ los textos del juego están en español; el inglés sale de un diccionario
 - **Tickets del gacha:** 1/600 por derrota y ×10 de jefe 1/4 (`js/entities/pickup.js`,
   `ticketRates()`); la mejora de tienda Suerte (+15% por nivel, 5) los multiplica.
 
+- **Nivel 1-100 y evolución en la run** (rama `evolucion-en-run`): curva
+  `Player.xpFor` (nivel 60 ≈ run normal; 100 sólo con mejoras de experiencia),
+  +1% vida y +0,5% ataque por nivel, cartas según `G.LevelUp.picksAt` (37 hasta
+  el 60, 51 hasta el 100). El compañero evoluciona al nivel real de su especie
+  (`js/data/evolutions.js`, generado por `tools/fetch_evolutions.py` con caché en
+  `tools/cache/pokeapi/`; intercambio 50, piedras y demás 36; ayudas en
+  `js/data/evos.js`): `Player.evolveTo`, `game.js evolvePartner`, ramas con cartas
+  `evo-branch`. Empezar pequeño: +30% / +15% de experiencia (`G.Evos.bonusFor`).
+  Las mejoras permanentes van por línea evolutiva (`G.DB.upgradesOf` resuelve la
+  familia; migración v4 en `db.js`).
+
 ## Dónde está cada cosa
 
 | Qué | Dónde |
@@ -86,6 +97,7 @@ los textos del juego están en español; el inglés sale de un diccionario
 | HUD (fila de 6 ataques + fila de pasivas) | `js/ui/hud.js` |
 | Pantalla de fusión y cartas | `js/ui/run-ui.js` |
 | Cooperativo: el estado manda toda la lista de movimientos (`mvs`) y bits de estado (1 quemado, 2 veneno, 4 escudo, 8 frenado, 16 empapado) | `js/net/coop.js` |
+| Evolución en la run: datos, ayudas, jugador, flujo | `js/data/evolutions.js`, `js/data/evos.js`, `js/entities/player.js` (`evolveTo`), `js/game.js` (`evolvePartner`) |
 | Diseño y plan de este cambio | `docs/superpowers/specs/2026-10-11-multi-move-combat-design.md`, `docs/superpowers/plans/2026-10-11-multi-move-combat.md` |
 
 ## Convenciones
