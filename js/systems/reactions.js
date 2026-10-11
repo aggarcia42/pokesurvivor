@@ -19,7 +19,7 @@
 G.Reactions = (() => {
   const BIT = { burn: 1, poison: 2, shield: 4, slow: 8, wet: 16 };
   const CD = 0.5;
-  const lvlK = pl => 1 + (pl.level || 1) * 0.06;
+  const lvlK = pl => 1 + (pl.level || 1) * 0.024;   // (nivel 1-100: ×0,4 respecto al 0,06 de antes)
 
   /** ¿Sufre `status` este enemigo? (copia remota: por los bits sincronizados) */
   function has(e, status) {

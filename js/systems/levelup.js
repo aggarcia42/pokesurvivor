@@ -100,5 +100,18 @@ G.LevelUp = (() => {
     return picked;
   }
 
-  return { offer, candidates, BONUS };
+  /**
+   * Agenda de cartas con nivel 1-100: cada nivel hasta el 20, cada 2 hasta el
+   * 50, cada 3 hasta el 98 y el 100. 37 cartas hasta el 60, 51 hasta el 100:
+   * da para llevar al máximo seis ataques y cuatro pasivas.
+   */
+  function picksAt(level) {
+    if (level < 2) return false;
+    if (level <= 20) return true;
+    if (level <= 50) return level % 2 === 0;
+    if (level <= 98) return (level - 50) % 3 === 0;
+    return level === 100;
+  }
+
+  return { offer, candidates, picksAt, BONUS };
 })();

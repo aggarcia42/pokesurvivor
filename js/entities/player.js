@@ -92,15 +92,21 @@ G.Player = class Player {
     return out;
   }
 
-  // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
+  // Nivel 1-100 como en Mundo Misterioso (2026-10-11). Calibrada para que el
+  // nivel 60 cueste lo que costaba el 24 (final de una run normal de 25 min) y
+  // el 100 unas 3 veces más: sólo con las mejoras de experiencia.
+  static get MAX_LEVEL() { return 100; }
   static xpFor(level) {
-    return Math.floor((8 + level * 6 + Math.pow(level, 1.75) * 1.6) * 4);
+    return Math.floor((3 + level * 1.2 + Math.pow(level, 1.5) * 0.25) * 4.19);
   }
+  /** Experiencia total desde el nivel 1 hasta llegar a `level`. */
+  static cumXp(level) { let s = 0; for (let i = 1; i < level; i++) s += Player.xpFor(i); return s; }
 
   cy() { return this.y; }
 
   // ---------------- stats efectivos ----------------
-  get atk() { return this.baseAtk * this.atkMul; }
+  /** Ataque: especie × mejoras × pasivas × crecimiento por nivel (+0,5% por nivel). */
+  get atk() { return this.baseAtk * this.atkMul * (1 + (this.level - 1) * 0.005); }
   get spd() {
     const s = this.baseSpd * this.spdMul * (this.slowT > 0 ? 0.5 : 1);
     const w = G.Weather.speedFor(this.mon.types);
@@ -289,18 +295,32 @@ G.Player = class Player {
 
   addMaxHp(amount) { this.maxHp += amount; this.hp += amount; }
 
-  /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
+  /**
+   * Suma experiencia. Devuelve { levels, picks, evo }: niveles subidos, cartas
+   * ganadas según la agenda (G.LevelUp.picksAt) y, si algún nivel desbloquea
+   * una evolución, { options } con las etapas posibles (ver evolveTo).
+   */
   gainXp(amount) {
+    const r = { levels: 0, picks: 0, evo: null };
+    if (this.level >= Player.MAX_LEVEL) { this.xp = 0; return r; }
     this.xp += amount * this.xpMul;
-    let leveled = 0;
-    while (this.xp >= this.xpNext) {
+    while (this.xp >= this.xpNext && this.level < Player.MAX_LEVEL) {
       this.xp -= this.xpNext;
       this.level++;
       this.xpNext = Player.xpFor(this.level);
-      leveled++;
+      r.levels++;
+      if (G.LevelUp.picksAt(this.level)) r.picks++;
+      // Crecimiento: +1% de la vida de la especie y (en `atk`) +0,5% de ataque por nivel.
+      const g = this.mon.hp * 0.01;
+      this.maxHp += g; this.hp += g;
+      if (!r.evo) r.evo = this.evolutionDue();
     }
-    return leveled;
+    if (this.level >= Player.MAX_LEVEL) this.xp = 0;
+    return r;
   }
+
+  /** Etapas a las que ya se puede evolucionar con el nivel actual, o null (ver evolveTo). */
+  evolutionDue() { return null; }
 
   // ---------------- objeto equipado ----------------
   hasItem(id) { return this.item === id; }

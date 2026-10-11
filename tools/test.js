@@ -586,6 +586,39 @@ test('especie sin entrada se comporta como familia de una etapa', () => {
   eq(G.Evos.lineOf(99999), [99999]); ok(Math.abs(G.Evos.bonusFor(99999) - 0.30) < 1e-9);
 });
 
+// ---- Nivel 1-100
+test('curva: fórmula, nivel 60 cuesta lo que costaba el 24, y el 100 unas 3 veces más', () => {
+  eq(G.Player.MAX_LEVEL, 100);
+  eq(G.Player.xpFor(1), Math.floor((3 + 1.2 + 0.25) * 4.19));
+  eq(G.Player.xpFor(60), Math.floor((3 + 72 + 0.25 * Math.pow(60, 1.5)) * 4.19));
+  const oldCum = L => { let s = 0; for (let i = 1; i < L; i++) s += Math.floor((8 + i * 6 + Math.pow(i, 1.75) * 1.6) * 4); return s; };
+  ok(Math.abs(G.Player.cumXp(60) - oldCum(24)) / oldCum(24) < 0.01, 'cum60 ' + G.Player.cumXp(60) + ' vs ' + oldCum(24));
+  const r = G.Player.cumXp(100) / G.Player.cumXp(60); ok(r > 2.9 && r < 3.5, 'ratio ' + r);
+});
+test('agenda de cartas: 37 picks hasta el 60 y 51 hasta el 100', () => {
+  const count = to => { let n = 0; for (let L = 2; L <= to; L++) if (G.LevelUp.picksAt(L)) n++; return n; };
+  eq(count(60), 37); eq(count(100), 51);
+  ok(G.LevelUp.picksAt(2) && G.LevelUp.picksAt(20) && G.LevelUp.picksAt(22) && !G.LevelUp.picksAt(21) && G.LevelUp.picksAt(53) && !G.LevelUp.picksAt(52) && G.LevelUp.picksAt(100));
+});
+test('gainXp: tope en 100, picks según agenda y crecimiento por nivel', () => {
+  const pl = mkPlayer();
+  const hp0 = pl.maxHp, atk0 = pl.atk;
+  const r = pl.gainXp(G.Player.xpFor(1) + G.Player.xpFor(2));     // nivel 1 → 3
+  eq(r.levels, 2); eq(r.picks, 2); eq(r.evo, null); eq(pl.level, 3);
+  ok(Math.abs(pl.maxHp - (hp0 + 2 * pl.mon.hp * 0.01)) < 1e-6, 'vida +1%/nivel');
+  ok(Math.abs(pl.atk / atk0 - 1.01) < 1e-9, 'ataque +0,5%/nivel');
+  pl.gainXp(1e9);
+  eq(pl.level, 100); eq(pl.xp, 0, 'sin exceso por encima del tope');
+  eq(pl.gainXp(1000).levels, 0);
+});
+test('las fórmulas por nivel se reescalan (×0,4)', () => {
+  const rd = f => require('fs').readFileSync(require('path').join(__dirname, '..', f), 'utf8');
+  ok(rd('js/entities/enemy.js').includes('pl.level * 0.024'), 'quemadura');
+  ok(rd('js/systems/combat.js').includes('pl.level * 1.6'), 'Casco Dentado');
+  ok(rd('js/game.js').includes('pl.level * 5.6'), 'bomba');
+  ok(rd('js/systems/reactions.js').includes('* 0.024'), 'reacciones');
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;

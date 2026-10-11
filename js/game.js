@@ -293,6 +293,11 @@ G.Game = (() => {
     });
   }
 
+  // ---------------- evolución del compañero ----------------
+
+  /** gainXp ha cruzado un nivel de evolución (se completa en la tarea 3). */
+  function onEvolutionDue(evo) { /* ver evolvePartner */ }
+
   // ---------------- vínculos: fusiones ----------------
 
   /**
@@ -357,7 +362,9 @@ G.Game = (() => {
     if (G.Coop.active) G.Coop.collected(p, who);
     if (mine || p.kind === 'bomb') G.Audio.sfx(PICK_SFX[p.kind]);
     if (p.kind === 'xp' || p.kind === 'xpBig') {
-      pendingLevels += pl.gainXp(p.value * (G.Coop.active ? G.Coop.xpFactor() : 1));
+      const g = pl.gainXp(p.value * (G.Coop.active ? G.Coop.xpFactor() : 1));
+      pendingLevels += g.picks;
+      if (g.evo) onEvolutionDue(g.evo);
       return;
     }
     if (p.kind === 'coin') {
@@ -391,7 +398,7 @@ G.Game = (() => {
       G.FX.ring(who.x, who.y, 20, R, '#ff7b3d', 0.5, 6);
       for (const e of G.EnemyMgr.all()) {
         if (mine ? !G.Camera.sees(e.x, e.y, 0) : G.U.dist2(e.x, e.y, who.x, who.y) > R * R) continue;
-        e.hurt(60 + pl.level * 14, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
+        e.hurt(60 + pl.level * 5.6, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
       }
     }
   }
