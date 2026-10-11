@@ -652,6 +652,16 @@ test('un compañero evoluciona por el estado de red e ignora un dex desconocido'
   p.net.dex = 424242; p.netUpdate(0.016); eq(p.dex, 5);
 });
 
+test('empezar pequeño da bonus de experiencia: base +30%, intermedia +15%, final 0', () => {
+  for (const [dex, k] of [[4, 1.30], [5, 1.15], [6, 1]]) {
+    const pl = new G.Player(G.DEX_BY[dex], G.Upgrades.perks({}), false);
+    pl.xpMul *= 1 + G.Evos.bonusFor(dex);
+    ok(Math.abs(pl.xpMul - k) < 1e-9, dex + ': ' + pl.xpMul);
+  }
+  const html = G.MenuUI.evoLineHtml(5);
+  ok(/Charmander/.test(html) && /16/.test(html) && /36/.test(html), html);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;

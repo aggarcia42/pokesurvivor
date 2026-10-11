@@ -42,6 +42,19 @@ G.MenuUI = (() => {
 
   // ---------------- menú principal ----------------
 
+  /** Línea evolutiva de una especie con sus niveles: "Charmander → Nv.16 Charmeleon → Nv.36 Charizard". */
+  function evoLineHtml(dex) {
+    const line = G.Evos.lineOf(dex);
+    if (line.length <= 1) return '';
+    const parts = [];
+    const walk = (d, lvl) => {
+      parts.push((lvl ? `<span style="color:var(--muted)">Nv.${lvl}</span> ` : '') + `<b${d === dex ? ' class="gold"' : ''}>${G.DEX_BY[d].name}</b>`);
+      for (const x of G.Evos.next(d)) walk(x.to, x.lvl);
+    };
+    walk(G.Evos.family(dex), 0);
+    return `<p class="evo-line" style="font-size:13px;margin:6px 0">${parts.join(' → ')}</p>`;
+  }
+
   function open() {
     const s = G.DB.save;
     const mon = G.DEX_BY[s.partner];
@@ -52,7 +65,9 @@ G.MenuUI = (() => {
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);
     $('menu-partner-name').innerHTML = mon.name + (shiny ? ' ' + G.Icons.html('shiny', 24) : '');
-    $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity);
+    const nx = G.Evos.next(mon.dex)[0];
+    $('menu-partner-info').innerHTML = G.UI.typeChips(mon.types) + ' ' + G.UI.stars(mon.rarity)
+      + (nx ? ` <span style="color:var(--muted);font-size:12px">· Evoluciona al Nv.${nx.lvl}</span>` : '');
 
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     const shinies = Object.keys(s.shiny || {}).length;
@@ -194,6 +209,8 @@ G.MenuUI = (() => {
         <h3>${own ? p.name : '???'}</h3>
         <div style="color:${G.Gacha.RARITY_COLOR[p.rarity]}">${G.UI.stars(p.rarity, 24)} ${G.Gacha.RARITY_NAME[p.rarity]}</div>
         <div style="margin:6px 0">${own ? G.UI.typeChips(p.types) : ''}</div>
+        ${own ? evoLineHtml(dex) : ''}
+        ${own && G.Evos.bonusFor(dex) ? `<p style="font-size:13px;color:var(--gold);margin:4px 0">+${Math.round(G.Evos.bonusFor(dex) * 100)}% de experiencia por empezar pequeño</p>` : ''}
       </div>
       ${own ? `
         ${bar('Vida', p.hp, max.hp, p.hp)}
@@ -280,5 +297,5 @@ G.MenuUI = (() => {
     }
   }
 
-  return { init, open, shinyView, GEN_NAMES };
+  return { init, open, shinyView, evoLineHtml, GEN_NAMES };
 })();

@@ -107,6 +107,8 @@ G.Game = (() => {
     time = 0; pendingLevels = 0; branchChoice = null;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    // Empezar pequeño paga: +30% de experiencia desde la forma base, +15% desde la intermedia.
+    pl.xpMul *= 1 + G.Evos.bonusFor(mon.dex);
     caught = [];
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.

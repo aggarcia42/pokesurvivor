@@ -524,6 +524,7 @@ G.I18n.add({
   '+12% de experiencia ganada por nivel.': '+12% experience gained per level.',
   '¡{x} evolucionó en {x}!': '{x} evolved into {x}!', 'Crece contigo': 'Grows with you', 'Tu compañero evoluciona en una run.': 'Your partner evolves during a run.',
   'Entrenador': 'Trainer', 'Tu compañero evoluciona 25 veces.': 'Your partner evolves 25 times.',
+  '+{x}% de experiencia por empezar pequeño': '+{x}% experience for starting small', '· Evoluciona al Nv.{x}': '· Evolves at Lv.{x}',
   'Pasiva': 'Passive', 'Huecos': 'Slots', 'Suerte': 'Luck', '+15% tickets del gacha': '+15% gacha tickets', '+1 hueco de movimiento (hasta 6)': '+1 move slot (up to 6)', 'OBJETO': 'ITEM',
   '¡Vapor!': 'Steam!', '¡Rotura!': 'Shatter!', '¡Detonación!': 'Detonation!', '¡Conducción!': 'Conduction!', '¡Congelación!': 'Freeze!',
   'Tormenta Ígnea': 'Fire Tornado', 'Marea Voltio': 'Volt Tide', 'Alud Glacial': 'Glacial Avalanche', 'Llama Tóxica': 'Toxic Blaze',
