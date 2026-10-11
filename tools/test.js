@@ -555,6 +555,37 @@ test('Pokédex: un shiny que tienes se ve shiny en la cuadrícula y en la ficha;
   eq(G.MenuUI.shinyView(s, 4), false, 'sin shiny');
 });
 
+// ---- Evolución en la run: datos
+load('js/data/evolutions.js');
+load('js/data/evos.js');
+test('todas las especies tienen entrada de evolución y los destinos existen', () => {
+  for (const p of G.DEX) {
+    const e = G.EVOS[p.dex];
+    ok(e, p.dex + ' sin entrada');
+    ok(G.DEX_BY[e.fam], p.dex + ' familia inexistente ' + e.fam);
+    for (const x of e.evo) { ok(G.DEX_BY[x.to], p.dex + ' → ' + x.to + ' no está en el juego'); ok(x.lvl >= 1 && x.lvl <= 100, p.dex + ' nivel ' + x.lvl); }
+  }
+});
+test('niveles reales, intercambio a 50, piedras a 36, ramas de Eevee', () => {
+  eq(G.EVOS[4].evo, [{ to: 5, lvl: 16 }]);            // Charmander → Charmeleon
+  eq(G.EVOS[5].evo, [{ to: 6, lvl: 36 }]);            // Charmeleon → Charizard
+  eq(G.EVOS[64].evo, [{ to: 65, lvl: 50 }]);          // Kadabra → Alakazam (intercambio)
+  eq(G.EVOS[25].evo, [{ to: 26, lvl: 36 }]);          // Pikachu → Raichu (piedra)
+  ok(G.EVOS[133].evo.length >= 5, 'Eevee ramas: ' + G.EVOS[133].evo.length);
+  eq(G.EVOS[6].evo, []);
+});
+test('familia, etapa, línea y bonus', () => {
+  eq(G.Evos.family(6), 4); eq(G.Evos.family(4), 4);
+  eq(G.Evos.stage(4), 0); eq(G.Evos.stage(5), 1); eq(G.Evos.stage(6), 2);
+  eq(G.Evos.lineOf(5), [4, 5, 6]);
+  eq(G.Evos.next(5), [{ to: 6, lvl: 36 }]);
+  ok(Math.abs(G.Evos.bonusFor(4) - 0.30) < 1e-9); ok(Math.abs(G.Evos.bonusFor(5) - 0.15) < 1e-9); eq(G.Evos.bonusFor(6), 0);
+});
+test('especie sin entrada se comporta como familia de una etapa', () => {
+  eq(G.Evos.family(99999), 99999); eq(G.Evos.next(99999), []); eq(G.Evos.stage(99999), 0);
+  eq(G.Evos.lineOf(99999), [99999]); ok(Math.abs(G.Evos.bonusFor(99999) - 0.30) < 1e-9);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;
