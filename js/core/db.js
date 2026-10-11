@@ -27,7 +27,7 @@
 G.DB = (() => {
   const K_ACC = 'ps.accounts', K_SES = 'ps.session', K_SAVE = 'ps.save.';
   const K_CLOUD = 'ps.cloud.', K_MIGRATED = 'ps.migrated.';
-  const VERSION = 3;
+  const VERSION = 4;
   const START_COINS = 500;
   const SDK = 'https://www.gstatic.com/firebasejs/13.0.0/';
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
@@ -68,7 +68,7 @@ G.DB = (() => {
       starter: null,          // dex que te tocó en el test
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
-      pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
+      pupg: {},               // familia (dex base) -> { id -> nivel }: mejoras de cada línea evolutiva
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -96,6 +96,19 @@ G.DB = (() => {
         s.pupg[s.partner] = Object.assign({}, s.upgrades);
       }
       s.pupgDone = true;
+    }
+    // v3 -> v4: las mejoras pasan de especie a FAMILIA (el compañero evoluciona en la run).
+    if (!s.famDone) {
+      const fam = {};
+      for (const d in s.pupg || {}) {
+        const src = s.pupg[d];
+        if (!src || typeof src !== 'object') continue;
+        const f = G.Evos.family(+d);
+        const mine = fam[f] = fam[f] || {};
+        for (const k in src) mine[k] = Math.max(mine[k] || 0, src[k] | 0);
+      }
+      s.pupg = fam;
+      s.famDone = true;
     }
     s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
     s.v = VERSION;
@@ -595,11 +608,18 @@ G.DB = (() => {
 
   function ownsShiny(dex) { return !!(save && save.shiny && save.shiny[dex]); }
 
-  /** Mejoras compradas para un Pokémon: { id -> nivel }. */
+  /** Mejoras compradas para la FAMILIA de un Pokémon: { id -> nivel } (Charmander, Charmeleon y Charizard comparten). */
   function upgradesOf(dex) {
     if (!save) return {};
     save.pupg = save.pupg || {};
-    return save.pupg[dex] || (save.pupg[dex] = {});
+    const f = G.Evos.family(dex);
+    return save.pupg[f] || (save.pupg[f] = {});
+  }
+
+  /** Niveles de mejora comprados en la familia de un Pokémon (para las marcas de la Pokédex). */
+  function familyUpgradeLevels(dex) {
+    const u = save && save.pupg && save.pupg[G.Evos.family(dex)];
+    return u ? Object.values(u).reduce((a, b) => a + b, 0) : 0;
   }
 
   /**
@@ -617,7 +637,7 @@ G.DB = (() => {
 
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
-    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, familyUpgradeLevels, migrateForTest: s => migrate(s, s.name),
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

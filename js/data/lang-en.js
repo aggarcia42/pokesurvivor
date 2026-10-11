@@ -137,7 +137,6 @@ G.I18n.add({
   '+8 vida': '+8 HP', '+4% daño': '+4% damage', '+3% velocidad': '+3% speed', '-3% recarga': '-3% cooldown', '+2% defensa': '+2% defense',
   '+0.2 vida/s': '+0.2 HP/s', '+12% recogida': '+12% pickup', '+8% Pokémonedas': '+8% PokéCoins', '+5% experiencia': '+5% experience',
   'Empiezas con 2 movimientos': 'Start with 2 moves', 'Máx.': 'Max.',
-  'Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.': 'Each Pokémon has its own upgrades: they only count when you play with it.',
   '(compañero)': '(partner)',
 
   // ---------------- interactivos y clima ----------------
@@ -525,6 +524,8 @@ G.I18n.add({
   '¡{x} evolucionó en {x}!': '{x} evolved into {x}!', 'Crece contigo': 'Grows with you', 'Tu compañero evoluciona en una run.': 'Your partner evolves during a run.',
   'Entrenador': 'Trainer', 'Tu compañero evoluciona 25 veces.': 'Your partner evolves 25 times.',
   '+{x}% de experiencia por empezar pequeño': '+{x}% experience for starting small', '· Evoluciona al Nv.{x}': '· Evolves at Lv.{x}',
+  'Las mejoras son de toda la línea evolutiva: cuentan cuando juegas con cualquiera de sus formas.': 'Upgrades belong to the whole evolution line: they count when you play as any of its forms.',
+  'Cambiar compañero': 'Change partner', 'Línea de {x}': '{x} line', 'Tiene mejoras': 'Has upgrades', 'Mejoras de la línea: {x} niveles': 'Line upgrades: {x} levels',
   'Pasiva': 'Passive', 'Huecos': 'Slots', 'Suerte': 'Luck', '+15% tickets del gacha': '+15% gacha tickets', '+1 hueco de movimiento (hasta 6)': '+1 move slot (up to 6)', 'OBJETO': 'ITEM',
   '¡Vapor!': 'Steam!', '¡Rotura!': 'Shatter!', '¡Detonación!': 'Detonation!', '¡Conducción!': 'Conduction!', '¡Congelación!': 'Freeze!',
   'Tormenta Ígnea': 'Fire Tornado', 'Marea Voltio': 'Volt Tide', 'Alud Glacial': 'Glacial Avalanche', 'Llama Tóxica': 'Toxic Blaze',

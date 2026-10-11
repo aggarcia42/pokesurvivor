@@ -662,6 +662,16 @@ test('empezar pequeño da bonus de experiencia: base +30%, intermedia +15%, fina
   ok(/Charmander/.test(html) && /16/.test(html) && /36/.test(html), html);
 });
 
+test('las mejoras van por familia y la migración v4 funde las de una familia', () => {
+  G.DB.playAsGuest();
+  const s = G.DB.save;
+  s.pupg = { 4: { atk: 2, hp: 1 }, 6: { atk: 1, spd: 3 }, 25: { cd: 2 }, 7: 'basura' };
+  s.v = 3; delete s.famDone;
+  G.DB.migrateForTest(s);
+  eq(s.pupg[4], { atk: 2, hp: 1, spd: 3 }); ok(!s.pupg[6]); eq(s.pupg[G.Evos.family(25)], { cd: 2 }); ok(!s.pupg[7]); eq(s.v, 4);
+  eq(G.DB.upgradesOf(6), s.pupg[4]); eq(G.DB.familyUpgradeLevels(5), 6); eq(G.DB.familyUpgradeLevels(1), 0);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;
