@@ -216,13 +216,16 @@ G.Enemies = (() => {
   function upcomingDex(t, ahead = 60) {
     if (!cast) rollRun();
     const out = [];
-    for (const tier of cast) if (tier.from <= t + ahead) for (const e of tier.list) out.push(e.dex);
+    for (const tier of cast) if (tier.from <= t + ahead) for (const e of tier.list) { out.push(e.dex); if (e.minion) out.push(e.minion); }   // la manada del invocador también
     for (const b of bosses) if (b.at <= t + ahead) out.push(b.dex);
     return out;
   }
 
+  /** Las plantillas del elenco de esta run (pruebas). */
+  function castDefs() { if (!cast) rollRun(); return cast.flatMap(t => t.list); }
+
   return {
-    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
+    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, castDefs, candidates, hordeTypes, hordeDefs,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

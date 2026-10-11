@@ -776,6 +776,9 @@
     /** Copia local de un enemigo del anfitrión (cooperativo). */
     function addRemote(o) {
       if (byId.has(o.id)) return byId.get(o.id);
+      // El invitado no corre el precargador del anfitrión: cada especie nueva
+      // salía como una bolita gris hasta que llegaba su hoja. (Shiny: makeShiny precarga la suya.)
+      if (!o.shiny) G.Sprites.preload([o.dex]);
       const def = { dex: o.dex, hp: o.hp, spd: 0, dmg: o.dmg, xp: 0, behavior: o.beh || 'remote' };
       const e = new Enemy(def, o.x, o.y, { hp: 1, spd: 1, dmg: 1 }, o.boss);
       e.id = o.id;

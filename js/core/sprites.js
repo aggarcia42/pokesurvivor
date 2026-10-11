@@ -236,9 +236,12 @@ G.Sprites = (() => {
       }
       const frame = s === sheet(this.dex, this.cur, this.shiny) ? this.frame : 0;
       if (!m || !s || !s.ready) {
-        // Respaldo: bolita, por si falta el fichero.
+        // Respaldo mientras llega la hoja (o si falta el fichero): bolita tenue.
+        const prevA = ctx.globalAlpha;
+        ctx.globalAlpha = prevA * 0.45;
         ctx.fillStyle = opts.color || '#6b7a94';
-        ctx.beginPath(); ctx.arc(x, y - 12 * k, 8 * k, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y - 12 * k, 7 * k, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = prevA;
         return;
       }
       const row = Math.min(this.dir, m.r - 1);

@@ -704,6 +704,34 @@ test('al evolucionar hay una animación corta del sprite que acaba sola (sin des
   ok(!/function evolvePartner[\s\S]*?flash\('#ffffff'/.test(g), 'evolvePartner no debe usar el destello de pantalla');
 });
 
+// ---- Sprites sin cargar (bolita gris): precargar lo que no pasaba por el precargador
+load('js/data/enemies.js');
+test('upcomingDex incluye las manadas de los invocadores del elenco', () => {
+  G.Enemies.rollRun();
+  const up = new Set(G.Enemies.upcomingDex(0, 600));
+  const summoners = G.Enemies.castDefs().filter(d => d.minion);
+  ok(summoners.length > 0, 'el elenco debería tener algún invocador');
+  for (const d of summoners) ok(up.has(d.minion), d.dex + ' invoca a ' + d.minion + ' y no se precarga');
+});
+load('js/entities/enemy.js');
+test('una copia remota (cooperativo) precarga su sprite al crearse', () => {
+  const calls = []; const orig = G.Sprites.preload; G.Sprites.preload = (d, t, sh) => { calls.push([d.slice(), !!sh]); };
+  G.EnemyMgr.clear();
+  G.EnemyMgr.addRemote({ id: 9001, dex: 25, x: 0, y: 0, boss: false, shiny: false, hp: 10, dmg: 1, beh: 'remote' });
+  G.EnemyMgr.addRemote({ id: 9002, dex: 26, x: 0, y: 0, boss: false, shiny: true, hp: 10, dmg: 1, beh: 'remote' });
+  G.Sprites.preload = orig; G.EnemyMgr.clear();
+  eq(calls, [[[25], false], [[26], true]]);
+});
+
+load('js/systems/rift.js');
+test('la grieta elige al legendario al abrirse y precarga sus sprites', () => {
+  const calls = []; const orig = G.Sprites.preload; G.Sprites.preload = (d, t, sh) => { calls.push([d.slice(), !!sh]); };
+  G.Rift.show(10, 20, 45, 150, false);
+  G.Sprites.preload = orig;
+  eq(calls, [[[150], false]]);
+  eq(G.Rift.rift.dex, 150);
+});
+
 // ---------------- ejecutar ----------------
 (async () => {
   let failed = 0;

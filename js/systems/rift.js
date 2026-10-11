@@ -54,16 +54,21 @@ G.Rift = (() => {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
       if (!G.World.isFree(x, y, 22)) continue;
-      show(x, y, TTL);
-      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
+      // El legendario se decide ya, para que sus sprites se carguen durante la cuenta atrás
+      // (si no, aparecía como una bolita gris al entrar en la arena).
+      const mon = pickLegend(nextType);
+      const shiny = G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512;
+      show(x, y, TTL, mon.dex, shiny);
+      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL, mon.dex, shiny ? 1 : 0]);
       return;
     }
   }
 
-  /** Aparece la grieta (también la que manda el anfitrión). */
-  function show(x, y, ttl) {
-    rift = { x, y, ttl, t: 0 };
+  /** Aparece la grieta (también la que manda el anfitrión). `dex`/`shiny`: el legendario que espera dentro. */
+  function show(x, y, ttl, dex = 0, shiny = false) {
+    rift = { x, y, ttl, t: 0, dex: dex || 0, shiny: !!shiny };
     asked = false;
+    if (dex) G.Sprites.preload([dex], 8000, !!shiny);
     // (El aviso grande lo dibuja hud.js mientras rift.t < 4,5 s.)
     G.Audio.sfx('rift');
     G.FX.ring(x, y, 6, 80, '#b48aff', 0.7, 5);
@@ -81,15 +86,22 @@ G.Rift = (() => {
   /** Quien manda: elige legendario y lugar, y avisa a todos. */
   let nextType = null;          // pruebas/vídeos: tipo de la próxima arena
 
+  /** Un legendario al azar (con tipo, uno de ese tipo si lo hay). */
+  function pickLegend(forceType) {
+    let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
+    if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
+    return G.U.pick(pool);
+  }
+
   function start(forceType) {
     if (arena) return;
     forceType = forceType || nextType; nextType = null;
-    let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
-    if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
-    const mon = G.U.pick(pool);
+    // El elegido al abrirse la grieta (ya precargado); con tipo forzado (pruebas), otro.
+    const chosen = rift && rift.dex && !forceType ? G.DEX_BY[rift.dex] : null;
+    const mon = chosen || pickLegend(forceType);
     const cfg = {
       tx: 5000 + Math.floor(Math.random() * 3000), ty: 5000 + Math.floor(Math.random() * 3000), r: ARENA_R,
-      dex: mon.dex, shiny: G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512,
+      dex: mon.dex, shiny: chosen ? !!rift.shiny : G.Sprites.hasShiny(mon.dex) && Math.random() < 1 / 512,
       // La arena es la de uno de sus tipos, al azar.
       type: forceType || G.U.pick(mon.types)
     };
@@ -102,6 +114,7 @@ G.Rift = (() => {
   function begin(cfg) {
     const pl = G.Game.player;
     const ts = TS();
+    G.Sprites.preload([cfg.dex], 8000, !!cfg.shiny);   // por si no se precargó al abrirse (invitado con cliente viejo, pruebas)
     arena = Object.assign({}, cfg, {
       x: cfg.tx * ts + ts / 2, y: cfg.ty * ts + ts / 2,
       back: { x: pl.x, y: pl.y }, biome: G.World.biome, t: 0, phase: 'fight', endT: 0, bossId: 0
@@ -246,7 +259,7 @@ G.Rift = (() => {
 
   function onEvent(ev) {
     switch (ev[0]) {
-      case 'rift': show(ev[1], ev[2], ev[3]); break;
+      case 'rift': show(ev[1], ev[2], ev[3], ev[4] || 0, !!ev[5]); break;
       case 'riftx': rift = null; break;
       case 'arena': begin(ev[1]); break;
       case 'aw': won(); break;
@@ -260,6 +273,7 @@ G.Rift = (() => {
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },
     debugOpen() { G.Guard.flag('debug'); open(); },
+    show,
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { G.Guard.flag('debug'); start(type); },
     /** Para vídeos: la próxima grieta en la que entres será de este tipo. */

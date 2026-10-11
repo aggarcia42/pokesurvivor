@@ -110,6 +110,11 @@ los textos del juego están en español; el inglés sale de un diccionario
 - Al cambiar datos o textos: regenerar páginas y hacer `node tools/build.js`
   antes de commit (index.html y app.min.js van al repositorio).
 
+- **Sprites:** todo enemigo que se cree fuera del spawner debe precargar su hoja
+  (`G.Sprites.preload`): si no, sale como una bolita gris hasta que carga. Ya lo
+  hacen las manadas de los invocadores (`upcomingDex`), las copias remotas del
+  cooperativo (`addRemote`) y el legendario de la grieta (se elige al abrirse).
+
 ## Pendiente / ideas apuntadas
 
 - Menores de la revisión: `powerK` cuenta también a los jugadores caídos;
